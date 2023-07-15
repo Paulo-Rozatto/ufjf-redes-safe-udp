@@ -1,10 +1,8 @@
 
 import socket
+import struct
 from package import Package, TYPE
-
-PORT = 20001
-ADDRESS = "127.0.0.1"
-BUFFER_SIZE = 1024
+from constants import *
 
 seq_num = 10000
 ack_num = 12345
@@ -15,7 +13,7 @@ msgEncoded = package.encode()
 UDPServerSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
 
 # Atribuindo o endereço e a porta ao socket
-UDPServerSocket.bind((ADDRESS, PORT))
+UDPServerSocket.bind((SERVER_ADDRESS, SERVER_PORT))
 
 print("UDP server up and listening")
 while(True):
@@ -27,4 +25,8 @@ while(True):
     print(clientMsg)
     print(clientIP)
 
-    UDPServerSocket.sendto(msgEncoded, address)
+    # Embala o pacote propio dentro de um pacote udp
+    udp_header = struct.pack("!IIII", SERVER_PORT, address[1], len(msgEncoded), package.checksum())
+    udp_package = udp_header + msgEncoded
+
+    UDPServerSocket.sendto(udp_package, address)
