@@ -1,5 +1,6 @@
 
 import socket
+from package import Package, TYPE
 
 BUFFER_SIZE = 1024
 
@@ -14,6 +15,7 @@ UDPClientSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
 UDPClientSocket.sendto(msgEncoded, serverAddressPort)
  
 msgServer = UDPClientSocket.recvfrom(BUFFER_SIZE)
-msg = "Message from Server {}".format(msgServer[0])
+packge = Package(bytes=msgServer[0])
+msg = "Message from Server {}".format(packge)
 
 print(msg)

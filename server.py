@@ -1,12 +1,17 @@
 
 import socket
+from package import Package, TYPE, TYPE_CONVERTER
 
 PORT = 20001
 ADDRESS = "127.0.0.1"
 BUFFER_SIZE = 1024
 
+num = 10000
+package = Package(TYPE["DATA"], num, num, "Hello UDP Client")
+
 msgServer = "Hello UDP Client"
-msgEncoded = str.encode(msgServer)
+# msgEncoded = str.encode(msgServer) + num.to_bytes(4, byteorder='big')
+msgEncoded = package.encode()
 
 # Criar um datagrama de socket
 UDPServerSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
