@@ -8,10 +8,10 @@ TIME_OUT = 10000
 msgClient = "Hello UDP Server"
 msgEncoded = str.encode(msgClient)
 start, end = 0, 0
-receiverWindow = 0
+receiverWindow = 1
 
 file = []
-for i in range(0, 5):
+for i in range(0, 15):
     file.append(Package(TYPE["DATA"], i, 0, receiverWindow, str(i)))
 
 # Criando um socket UDP do lado do cliente
@@ -34,11 +34,14 @@ while True:
         send_package(package)
         break
 
-    if (end - start) < MAX_WINDOW_SIZE:
+    
+    while (end - start) < receiverWindow and end < len(file):
         package = file[end]
         print("Sending package {}".format(package.seq_number))
+        package.window_size = receiverWindow
         send_package(package)
         end += 1
+
     try:
         udp_socket.settimeout(TIME_OUT)
         udp_packet, sender_address = udp_socket.recvfrom(PACKAGE_SIZE)
@@ -54,12 +57,14 @@ while True:
 
         if package.type == TYPE["NAK"]:
             print("Received NAK {}".format(package.ack_number))
+            receiverWindow = package.window_size
             package = file[package.ack_number]
             send_package(package)
         else:
             print("Received ACK {}".format(package.ack_number))
-            start = package.ack_number
+            start = max(package.ack_number, end)
             end = start
+            receiverWindow = package.window_size
             print("New start: {}, new end: {}".format(start, end))
     except socket.timeout:
         print("Timeout")

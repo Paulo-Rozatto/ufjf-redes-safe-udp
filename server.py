@@ -4,17 +4,13 @@ import struct
 from package import Package, TYPE
 from constants import *
 
-# package = Package(TYPE["DATA"], seq_num, ack_num, "Hello UDP Client")
-# msgEncoded = package.encode()
-
 # Criar um datagrama de socket
 udp_socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
-
 # Atribuindo o endereço e a porta ao socket
 udp_socket.bind((SERVER_ADDRESS, SERVER_PORT))
 
 file = []
-window_size = MAX_WINDOW_SIZE
+window_size = 1
 window = [None] * window_size
 start, end = 0, 0
 
@@ -58,11 +54,13 @@ while(True):
         for i in range(start + 1, new_start):
             file.append(window[i - start])
         start = new_start
-        window = [None] * MAX_WINDOW_SIZE
+        window_size = min(window_size + 1, MAX_WINDOW_SIZE)
+        window = [None] * window_size
         package = Package(TYPE["ACK"], 0, start, window_size)
         send_package(package)
     elif (None not in window[1:]):
         print("Window is full")
+        window_size = max(window_size / 2, 1)
         package = Package(TYPE["NAK"], 0, start, window_size)
         send_package(package)
         continue
