@@ -14,7 +14,8 @@ udp_socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
 udp_socket.bind((SERVER_ADDRESS, SERVER_PORT))
 
 file = []
-window = [None] * WINDOW_SIZE
+window_size = MAX_WINDOW_SIZE
+window = [None] * window_size
 start, end = 0, 0
 
 def send_package(package):
@@ -28,7 +29,7 @@ def nextStart(array):
     for i in range(1, len(array)):
         if (array[i] == None):
             return start + i
-    return start + WINDOW_SIZE
+    return start + window_size
 
 print("UDP server up and listening")
 while(True):
@@ -40,7 +41,7 @@ while(True):
 
     if (correct_checksum != package.checksum()): # send nak
         print("Checksum error")
-        package = Package(TYPE["NAK"], 0, start, "")
+        package = Package(TYPE["NAK"], 0, start, window_size)
         continue
 
     print("Received message: {}".format(package))
@@ -57,16 +58,16 @@ while(True):
         for i in range(start + 1, new_start):
             file.append(window[i - start])
         start = new_start
-        window = [None] * WINDOW_SIZE
-        package = Package(TYPE["ACK"], 0, start, "")
+        window = [None] * MAX_WINDOW_SIZE
+        package = Package(TYPE["ACK"], 0, start, window_size)
         send_package(package)
     elif (None not in window[1:]):
         print("Window is full")
-        package = Package(TYPE["NAK"], 0, start, "")
+        package = Package(TYPE["NAK"], 0, start, window_size)
         send_package(package)
         continue
     elif (package.seq_number > start):
         print("Added package to buffer, send nack for package {}".format(start))
         window[package.seq_number - start] = package
-        package = Package(TYPE["NAK"], 0, start, "")
+        package = Package(TYPE["NAK"], 0, start, window_size)
         send_package(package)
