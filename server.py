@@ -4,9 +4,6 @@ import random
 from package import Package, TYPE
 from constants import *
 
-# random.seed(42)
-random.seed(123213)
-
 # Criar um datagrama de socket
 udp_socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
 # Atribuindo o endereço e a porta ao socket
@@ -44,25 +41,25 @@ while True:
         isError = random.random() < ERROR_RATE
 
         if correct_checksum != package.checksum() or isError:  # send nak
-            # print("Checksum error")
-            # print("Corrupted message: {}".format(package))
+            print("Checksum error")
+            print("Corrupted message: {}".format(package))
             window_size = max(int(window_size / 2), 1)
             package = Package(TYPE["NAK"], 0, start, window_size)
-            # print("Sending NAK {}".format(package.ack_number))
+            print("Sending NAK {}".format(package.ack_number))
             send_package(package)
             continue
 
-        # print("Received message: {}".format(package))
+        print("Received message: {}".format(package))
 
         if package.type == TYPE["FIN"]:
-            # print("Closing connection")
-            print("File: {}".format([str(x.data) for x in file]))
-            package = Package(TYPE["FIN"], 0, 0, 0, "")
+            print("Closing connection")
             send_package(package)
+            package = Package(TYPE["FIN"], 0, 0, 0, "")
+            print("File: {}".format("".join([str(x.data) for x in file])))
             break
 
         if package.seq_number == start:
-            # print("Added package to file")
+            print("Added package to file")
             new_start = nextStart(window)
             file.append(package)
             for i in range(start + 1, new_start):
@@ -80,7 +77,7 @@ while True:
             send_package(package)
             continue
         elif package.seq_number > start and package.seq_number < start + window_size:
-            # print("Added package to buffer, send nack for package {}".format(start))
+            print("Added package to buffer, send nack for package {}".format(start))
             window[package.seq_number - start] = package
             package = Package(TYPE["NAK"], 0, start, window_size)
             send_package(package)

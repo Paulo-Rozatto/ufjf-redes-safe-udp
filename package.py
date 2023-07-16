@@ -46,13 +46,16 @@ class Package:
         )
 
     def encode(self):
+        if type(self.data) is str:
+            self.data = self.data.encode()
+
         return (
             self.type.to_bytes(1, byteorder="big")
             + self.seq_number.to_bytes(4, byteorder="big")
             + self.ack_number.to_bytes(4, byteorder="big")
             + self.window_size.to_bytes(2, byteorder="big")
             + self.length.to_bytes(4, byteorder="big")
-            + str.encode(self.data)
+            + self.data
         )
 
     def decode(self, data):
