@@ -3,17 +3,16 @@ import zlib
 TYPE = {
     "DATA": 1,
     "ACK": 2,
-    "FIN": 3,
-    # "SYN": 4,
+    "NAK": 3,
+    "FIN": 4,
 }
 
 TYPE_CONVERTER = {
     1: "DATA",
     2: "ACK",
-    3: "FIN",
-    # 4: "SYN",
+    3: "NAK",
+    4: "FIN",
 }
-
 
 class Package:
     type = 0  # diz se e pacote de dados ou de ack (preciso disso aqui?)

@@ -3,8 +3,7 @@ import struct
 from package import Package, TYPE
 from constants import *
 
-WINDOW_SIZE = 2
-TIME_OUT = 1
+TIME_OUT = 10000
 
 msgClient = "Hello UDP Server"
 msgEncoded = str.encode(msgClient)
@@ -15,37 +14,52 @@ for i in range(0, 5):
     file.append(Package(TYPE["DATA"], i, 0, str(i)))
 
 # Criando um socket UDP do lado do cliente
-UDPClientSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
+udp_socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
+
+def send_package(package):
+    msgEncoded = package.encode()
+    # Embala o pacote propio dentro de um pacote udp
+    udp_header = struct.pack(
+        "!IIII", SERVER_PORT, SERVER_PORT, len(msgEncoded), package.checksum()
+    )
+    udp_packet = udp_header + msgEncoded
+    udp_socket.sendto(udp_packet, (SERVER_ADDRESS, SERVER_PORT))
+
 
 while True:
     if end >= len(file):
         print("Closing connection")
         package = Package(TYPE["FIN"], 0, 0, "")
-        # Embala o pacote propio dentro de um pacote udp
-        udp_header = struct.pack("!IIII", SERVER_PORT, SERVER_PORT, len(package.encode()), package.checksum())
-        udp_package = udp_header + package.encode()
-        UDPClientSocket.sendto(udp_package, (SERVER_ADDRESS, SERVER_PORT))
+        send_package(package)
         break
 
     if (end - start) < WINDOW_SIZE:
-            package = file[end]
-            # Embala o pacote propio dentro de um pacote udp
-            udp_header = struct.pack("!IIII", SERVER_PORT, SERVER_PORT, len(package.encode()), package.checksum())
-            udp_package = udp_header + package.encode()
-            UDPClientSocket.sendto(udp_package, (SERVER_ADDRESS, SERVER_PORT))
-            end += 1
+        package = file[end]
+        print("Sending package {}".format(package.seq_number))
+        send_package(package)
+        end += 1
     try:
-        UDPClientSocket.settimeout(TIME_OUT)
-        udp_packet, sender_address = UDPClientSocket.recvfrom(BUFFER_SIZE)
+        udp_socket.settimeout(TIME_OUT)
+        udp_packet, sender_address = udp_socket.recvfrom(PACKAGE_SIZE)
         udp_header = struct.unpack("!IIII", udp_packet[:16])
-        # os dados do pacote udp eh o pacote do nosso protocolo
         udp_data = udp_packet[16:]
+
         correct_checksum = udp_header[3]
         package = Package(bytes=udp_data)
-        msg = "Server message: {}\n".format(package)
-        msg += "Valid checksum: {}\n".format(correct_checksum == package.checksum())
+        msg = "Server message: {}\nValid checksum: {}".format(
+            package, correct_checksum == package.checksum()
+        )
         print(msg)
-        start += 1
+
+        if package.type == TYPE["NAK"]:
+            print("Received NAK {}".format(package.ack_number))
+            package = file[package.ack_number]
+            send_package(package)
+        else:
+            print("Received ACK {}".format(package.ack_number))
+            start = package.ack_number
+            end = start
+            print("New start: {}, new end: {}".format(start, end))
     except socket.timeout:
         print("Timeout")
         break
