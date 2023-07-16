@@ -15,7 +15,7 @@ TYPE_CONVERTER = {
 }
 
 class Package:
-    type = 0  # diz se e pacote de dados ou de ack (preciso disso aqui?)
+    type = 0  # diz se e pacote de dados ou de ack
     seq_number = 0  # numero do pacote para ordenacao
     ack_number = 0  # o tcp tem isso entao vou colocar aqui
     window_size = 0  # tamanho da janela
